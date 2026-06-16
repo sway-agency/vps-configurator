@@ -1,0 +1,14 @@
+---
+- name: Skip if no app_env provided
+  ansible.builtin.debug:
+    msg: "Aucune variable app_env définie — /var/www/.env non écrit."
+  when: app_env is not defined or app_env | length == 0
+
+- name: Render /var/www/.env
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: "{{ app_env_path | default('/var/www/.env') }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0600"
+  when: app_env is defined and app_env | length > 0

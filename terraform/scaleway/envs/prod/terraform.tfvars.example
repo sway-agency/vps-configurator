@@ -1,0 +1,56 @@
+# Renomme en terraform.tfvars (gitignoré).
+# Override les defaults selon le besoin de cet env.
+
+env_name     = "prod"          # tu peux le renommer (ex: "production")
+project_slug = "myapp"         # slug global → préfixe les ressources
+
+# === Scaleway ===
+# https://console.scaleway.com/iam/api-keys
+scaleway_access_key      = "SCWXXXXXXXXXXXXXXXXX"
+scaleway_secret_key      = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+scaleway_project_id      = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+scaleway_organization_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+scaleway_region          = "fr-par"
+scaleway_zone            = "fr-par-1"
+
+vps_type                = "PLAY2-NANO"          # prod : monte au-dessus de DEV1-S
+vps_root_volume_size_gb = 40
+
+ssh_public_key = "ssh-ed25519 AAAA... your-key"
+
+# === DB ===
+# db_provider:
+#   "scaleway" → DB managée Scaleway (recommandé pour prod)
+#   "vps"      → DB en docker sur le VPS (pas de ressource TF, juste un password généré)
+db_provider       = "scaleway"
+db_engine         = "postgresql"   # ou "mariadb"
+db_engine_version = ""             # défaut Scaleway si vide
+db_node_type      = "db-dev-s"     # voir scaleway.com/en/pricing/database
+db_volume_size_gb = 20
+db_name           = "app"
+db_user           = "appuser"
+
+# === Cloudflare ===
+# Token API CF avec : Zone:DNS:Edit, Account:Cloudflare R2 Storage:Edit
+# Crée-le ici : https://dash.cloudflare.com/profile/api-tokens
+cloudflare_api_token  = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+cloudflare_account_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+cloudflare_zone_id    = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+domain    = "example.com"
+subdomain = ""                # prod = apex → example.com + *.example.com
+# subdomain = "prod"          # ou un sous-domaine → prod.example.com + *.prod.example.com
+
+extra_dns_records = []
+# Records simples (A/AAAA/CNAME/TXT) — pour MX/SRV (priority/weight) ajoute via dashboard CF.
+# extra_dns_records = [
+#   { name = "_dmarc", type = "TXT", value = "v=DMARC1; p=reject;", proxied = false },
+# ]
+
+# === Cloudflare R2 (S3-compatible) ===
+# Le bucket est créé par TF. Les access keys S3-style doivent être créées
+# manuellement dans le dashboard CF (R2 → Manage R2 API Tokens → Create) car
+# Cloudflare ne les expose pas via Terraform (à date 2026-06).
+r2_enabled           = true
+r2_access_key_id     = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+r2_secret_access_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

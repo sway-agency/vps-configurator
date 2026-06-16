@@ -19,10 +19,16 @@
 -A INPUT -p tcp --dport {{ honeypot_port }} -m conntrack --ctstate NEW -j ACCEPT
 {% endif %}
 
-{% for p in extra_in_tcp_ports %}
+{% if open_http_https | default(true) %}
+# Traefik / apps web
+-A INPUT -p tcp --dport 80  -m conntrack --ctstate NEW -j ACCEPT
+-A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
+{% endif %}
+
+{% for p in extra_in_tcp_ports | default([]) %}
 -A INPUT -p tcp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
 {% endfor %}
-{% for p in extra_in_udp_ports %}
+{% for p in extra_in_udp_ports | default([]) %}
 -A INPUT -p udp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
 {% endfor %}
 
@@ -33,16 +39,28 @@
 -A OUTPUT -o lo -j ACCEPT
 -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# HTTP / HTTPS — apt, docker pull, app egress
+# HTTP / HTTPS — apt, docker pull, R2/S3, Cloudflare, app egress
 -A OUTPUT -p tcp --dport 80  -m conntrack --ctstate NEW -j ACCEPT
 -A OUTPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
 
-# DNS (sinon rien ne résout — apt update, docker pull, etc.)
+# DNS (sinon rien ne résout)
 -A OUTPUT -p udp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
 -A OUTPUT -p tcp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
 
-# NTP (chrony) — pour garder l'horloge à jour, requis pour TLS
+# NTP (chrony) — pour TLS
 -A OUTPUT -p udp --dport 123 -m conntrack --ctstate NEW -j ACCEPT
+
+{% if (db_egress_host | default('')) and (db_egress_port | default(0)) %}
+# DB managée — egress restreint à l'endpoint
+-A OUTPUT -d {{ db_egress_host }} -p tcp --dport {{ db_egress_port }} -m conntrack --ctstate NEW -j ACCEPT
+{% endif %}
+
+{% for p in extra_out_tcp_ports | default([]) %}
+-A OUTPUT -p tcp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
+{% endfor %}
+{% for p in extra_out_udp_ports | default([]) %}
+-A OUTPUT -p udp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
+{% endfor %}
 
 # ICMP sortant
 -A OUTPUT -p icmp -j ACCEPT

@@ -1,7 +1,11 @@
 ---
-# IMPORTANT : si tu pousses des règles iptables qui DROP avant que la nouvelle session
-# SSH (port 4242) soit garantie joignable, tu te coupes l'accès. Ordre dans le
-# playbook : SSH est reconfiguré et le service redémarré AVANT firewall.yml.
+# === Stratégie anti-lockout pour iptables ===
+# 1. Backup iptables-save AVANT toute modification
+# 2. Apply nouvelles règles (validate: iptables-restore --test catche la syntaxe)
+# 3. wait_for SSH depuis local sur le nouveau port — preuve que ça marche encore
+# 4. Si KO → restore depuis backup via la session SSH actuelle (alive grâce à
+#    ESTABLISHED,RELATED de iptables même sous policy DROP)
+# 5. Fail loud avec instructions
 
 - name: Install iptables-persistent (pre-seed answers)
   ansible.builtin.debconf:
@@ -19,6 +23,13 @@
       - iptables
       - iptables-persistent
     state: present
+
+- name: Backup current iptables rules (rollback safety)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    iptables-save  > /root/.iptables.rollback.v4
+    ip6tables-save > /root/.iptables.rollback.v6
+  changed_when: false
 
 - name: Render IPv4 rules
   ansible.builtin.template:
@@ -46,7 +57,45 @@
     state: started
     enabled: true
 
-# Force le handler à tourner ICI (pas en fin de play) pour que les règles soient
-# actives avant que d'autres tâches éventuelles n'en dépendent.
-- name: Flush handlers now
+# Force le reload tout de suite (pas en fin de play) pour pouvoir tester
+# l'accessibilité depuis local et rollback si besoin.
+- name: Flush handlers (apply iptables now)
   ansible.builtin.meta: flush_handlers
+
+# === Post-apply sanity check ===
+
+- name: Verify SSH is still reachable from local on {{ ssh_port }}
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ ssh_port }}"
+    state: started
+    timeout: 20
+  delegate_to: localhost
+  become: false
+  register: post_iptables_ssh
+  failed_when: false
+
+- name: ROLLBACK iptables (SSH unreachable after apply)
+  ansible.builtin.shell: |
+    iptables-restore  < /root/.iptables.rollback.v4
+    ip6tables-restore < /root/.iptables.rollback.v6
+  when: post_iptables_ssh.failed | default(false) or post_iptables_ssh.elapsed | default(0) | int >= 20
+  changed_when: true
+
+- name: Fail loud if rollback occurred
+  ansible.builtin.fail:
+    msg: |
+      ⚠️  iptables a été rollback : SSH inaccessible sur {{ ansible_host }}:{{ ssh_port }}
+      après application. Les anciennes règles ont été restaurées.
+      Inspecte tasks/firewall.yml et templates/iptables-rules.v4.j2 puis relance.
+      Si ta session SSH est aussi morte : utilise la console KVM du provider.
+  when: post_iptables_ssh.failed | default(false) or post_iptables_ssh.elapsed | default(0) | int >= 20
+
+- name: Clean up rollback backup (success path)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /root/.iptables.rollback.v4
+    - /root/.iptables.rollback.v6
+  changed_when: false

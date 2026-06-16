@@ -11,12 +11,25 @@
           - ansible_facts['os_family'] == 'Debian'
         fail_msg: "Only Debian/Ubuntu are supported."
 
-    - name: Assert ssh_public_key is set
+    # Validation stricte de la clé SSH AVANT de toucher à quoi que ce soit.
+    # Une clé invalide = lockout garanti après hardening.
+    - name: Assert ssh_public_key is well-formed
       ansible.builtin.assert:
         that:
           - ssh_public_key is defined
-          - ssh_public_key | length > 50
-        fail_msg: "Set ssh_public_key in group_vars/all.yml before running."
+          - ssh_public_key | length > 80
+          - ssh_public_key is match('^(ssh-(rsa|ed25519|ecdsa)|ecdsa-sha2-)\\s+[A-Za-z0-9+/=]+(\\s+\\S+)?$')
+        fail_msg: >-
+          ssh_public_key absente ou malformée. Doit commencer par
+          'ssh-ed25519', 'ssh-rsa', 'ssh-ecdsa' ou 'ecdsa-sha2-...'.
+          Édite group_vars/all.yml.
+
+    - name: Assert deploy_user looks sane
+      ansible.builtin.assert:
+        that:
+          - deploy_user is defined
+          - deploy_user is match('^[a-z_][a-z0-9_-]{0,30}$')
+        fail_msg: "deploy_user invalide. Doit matcher [a-z_][a-z0-9_-]{0,30}."
 
   tasks:
     - import_tasks: tasks/base.yml
@@ -37,6 +50,9 @@
 
     - import_tasks: tasks/www.yml
       tags: [www]
+
+    - import_tasks: tasks/app_env.yml
+      tags: [app_env]
 
     - import_tasks: tasks/auto_updates.yml
       tags: [updates]

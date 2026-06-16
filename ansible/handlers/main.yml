@@ -1,8 +1,6 @@
 ---
-- name: restart ssh
-  ansible.builtin.service:
-    name: ssh
-    state: restarted
+# NB : pas de handler `restart ssh` ici — le restart sshd est explicite dans
+# tasks/ssh.yml (avec smoke-test) pour éviter tout risque de lockout différé.
 
 - name: restart endlessh
   ansible.builtin.service:

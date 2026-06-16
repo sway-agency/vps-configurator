@@ -1,0 +1,42 @@
+# Référence : ce que Terraform génère dans inventories/<env>.yml.
+# NE COPIE PAS ce fichier — utilise `terraform apply` dans terraform/scaleway/envs/<env>/,
+# il génère l'inventory automatiquement avec les vraies valeurs.
+#
+# L'inventory reflète l'état STATIONNAIRE (deploy@4242). Pour le 1er run en
+# bootstrap, surcharge en CLI :
+#   ansible-playbook -i inventories/prod.yml playbook.yml \
+#     -e ansible_user=root -e ansible_port=22 -e ansible_become=false
+#
+# Structure générée :
+#
+# prod:                              # groupe = nom de l'env
+#   hosts:
+#     vps:
+#       ansible_host: 1.2.3.4
+#       ansible_user: deploy
+#       ansible_port: 4242
+#       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+#       ansible_become: true
+#   vars:
+#     env_name: prod
+#     domain_full: prod.example.com
+#
+#     # DB egress (absent si db_provider=vps)
+#     db_egress_host: 5.6.7.8
+#     db_egress_port: 5432
+#
+#     # Variables injectées dans /var/www/.env (dict KEY: VALUE)
+#     app_env:
+#       ENV_NAME: prod
+#       DOMAIN: prod.example.com
+#       DATABASE_URL: "postgres://app:xxx@5.6.7.8:5432/app?sslmode=require"
+#       DB_HOST: 5.6.7.8
+#       DB_PORT: "5432"
+#       DB_USER: app
+#       DB_PASSWORD: xxx
+#       DB_NAME: app
+#       S3_ENDPOINT: "https://<account_id>.r2.cloudflarestorage.com"
+#       S3_BUCKET: my-app-prod
+#       S3_REGION: auto
+#       AWS_ACCESS_KEY_ID: xxx
+#       AWS_SECRET_ACCESS_KEY: xxx

@@ -1,0 +1,47 @@
+---
+# Variables COMMUNES à tous les environnements. Renomme en all.yml.
+#
+# Tout ce qui est spécifique à un env (db_egress_host, app_env, env_name, ...)
+# est fourni par l'inventory généré par Terraform — pas ici.
+
+# === User ===
+deploy_user: deploy
+# Clé publique SSH autorisée à se connecter en tant que `deploy_user`
+ssh_public_key: "ssh-ed25519 AAAA... your-key-here"
+
+# === SSH ===
+ssh_port: 4242
+
+# === Firewall ===
+# IN : SSH (4242), honeypot (22 si activé), HTTP/HTTPS (Traefik), + ces extras
+extra_in_tcp_ports: []
+extra_in_udp_ports: []
+
+# OUT : HTTP/HTTPS, DNS, NTP, et DB egress si défini dans l'inventory.
+# Pour autoriser d'autres sorties (webhooks vers un port custom, SMTP, etc.).
+extra_out_tcp_ports: []
+extra_out_udp_ports: []
+
+# Ouvre 80/443 IN pour Traefik. Mets à false si tu utilises Cloudflare Tunnels.
+open_http_https: true
+
+# === Honeypot ===
+honeypot_enabled: true
+honeypot_port: 22
+
+# === Docker ===
+docker_channel: stable
+
+# === Auto-updates ===
+unattended_auto_reboot: true
+unattended_auto_reboot_time: "03:30"
+docker_update_cron_hour: 4
+docker_update_cron_minute: 0
+
+# === Timezone ===
+system_timezone: Europe/Paris
+
+# === App env file ===
+# Path du fichier .env injecté par la task app_env. Ton docker-compose dans /var/www
+# doit le `env_file: ../.env` (ou pointer dessus).
+app_env_path: /var/www/.env
