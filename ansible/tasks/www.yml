@@ -1,0 +1,8 @@
+---
+- name: Ensure /var/www exists
+  ansible.builtin.file:
+    path: /var/www
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0755"

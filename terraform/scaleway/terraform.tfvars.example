@@ -1,0 +1,14 @@
+# Renomme en terraform.tfvars (gitignoré)
+# Credentials Scaleway : https://console.scaleway.com/iam/api-keys
+scaleway_access_key      = "SCWXXXXXXXXXXXXXXXXX"
+scaleway_secret_key      = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+scaleway_project_id      = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+scaleway_organization_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+region        = "fr-par"
+zone          = "fr-par-1"
+hostname      = "vps-prod"
+instance_type = "DEV1-S"
+image         = "debian_bookworm"
+
+ssh_public_key = "ssh-ed25519 AAAA... your-key"

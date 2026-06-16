@@ -1,0 +1,55 @@
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT DROP [0:0]
+
+# ===== INPUT =====
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+
+# ICMP (ping) — utile pour debug et MTU discovery
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 5/s -j ACCEPT
+
+# SSH (port 4242)
+-A INPUT -p tcp --dport {{ ssh_port }} -m conntrack --ctstate NEW -j ACCEPT
+
+{% if honeypot_enabled %}
+# Honeypot endlessh
+-A INPUT -p tcp --dport {{ honeypot_port }} -m conntrack --ctstate NEW -j ACCEPT
+{% endif %}
+
+{% for p in extra_in_tcp_ports %}
+-A INPUT -p tcp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
+{% endfor %}
+{% for p in extra_in_udp_ports %}
+-A INPUT -p udp --dport {{ p }} -m conntrack --ctstate NEW -j ACCEPT
+{% endfor %}
+
+# Log les paquets droppés (limité) avant DROP final
+-A INPUT -m limit --limit 3/min -j LOG --log-prefix "iptables-in-drop: " --log-level 6
+
+# ===== OUTPUT =====
+-A OUTPUT -o lo -j ACCEPT
+-A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+# HTTP / HTTPS — apt, docker pull, app egress
+-A OUTPUT -p tcp --dport 80  -m conntrack --ctstate NEW -j ACCEPT
+-A OUTPUT -p tcp --dport 443 -m conntrack --ctstate NEW -j ACCEPT
+
+# DNS (sinon rien ne résout — apt update, docker pull, etc.)
+-A OUTPUT -p udp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
+-A OUTPUT -p tcp --dport 53 -m conntrack --ctstate NEW -j ACCEPT
+
+# NTP (chrony) — pour garder l'horloge à jour, requis pour TLS
+-A OUTPUT -p udp --dport 123 -m conntrack --ctstate NEW -j ACCEPT
+
+# ICMP sortant
+-A OUTPUT -p icmp -j ACCEPT
+
+# ===== FORWARD =====
+# Docker installe ses propres règles dans la chain DOCKER-USER (insérée avant FORWARD).
+# On laisse Docker faire sa cuisine, mais on met une porte par défaut restrictive.
+-A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+COMMIT

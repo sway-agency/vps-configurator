@@ -1,0 +1,52 @@
+---
+# IMPORTANT : si tu pousses des règles iptables qui DROP avant que la nouvelle session
+# SSH (port 4242) soit garantie joignable, tu te coupes l'accès. Ordre dans le
+# playbook : SSH est reconfiguré et le service redémarré AVANT firewall.yml.
+
+- name: Install iptables-persistent (pre-seed answers)
+  ansible.builtin.debconf:
+    name: iptables-persistent
+    question: "{{ item }}"
+    value: "true"
+    vtype: boolean
+  loop:
+    - iptables-persistent/autosave_v4
+    - iptables-persistent/autosave_v6
+
+- name: Install iptables-persistent
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - iptables-persistent
+    state: present
+
+- name: Render IPv4 rules
+  ansible.builtin.template:
+    src: iptables-rules.v4.j2
+    dest: /etc/iptables/rules.v4
+    owner: root
+    group: root
+    mode: "0640"
+    validate: "iptables-restore --test %s"
+  notify: reload iptables
+
+- name: Render IPv6 rules
+  ansible.builtin.template:
+    src: iptables-rules.v6.j2
+    dest: /etc/iptables/rules.v6
+    owner: root
+    group: root
+    mode: "0640"
+    validate: "ip6tables-restore --test %s"
+  notify: reload iptables
+
+- name: Ensure netfilter-persistent is enabled
+  ansible.builtin.service:
+    name: netfilter-persistent
+    state: started
+    enabled: true
+
+# Force le handler à tourner ICI (pas en fin de play) pour que les règles soient
+# actives avant que d'autres tâches éventuelles n'en dépendent.
+- name: Flush handlers now
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,50 @@
+---
+# Hardened sshd_config drop-in. Loaded after the main config, overrides it.
+- name: Deploy hardened sshd config (drop-in)
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible — vps-configurator
+      Port {{ ssh_port }}
+      AddressFamily inet
+      Protocol 2
+
+      PermitRootLogin no
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
+      KbdInteractiveAuthentication no
+      UsePAM yes
+      PubkeyAuthentication yes
+      PermitEmptyPasswords no
+
+      AllowUsers {{ deploy_user }}
+      MaxAuthTries 3
+      LoginGraceTime 30
+      ClientAliveInterval 300
+      ClientAliveCountMax 2
+
+      X11Forwarding no
+      AllowAgentForwarding no
+      AllowTcpForwarding no
+      PermitUserEnvironment no
+      PrintMotd no
+    validate: /usr/sbin/sshd -t -f %s
+  notify: restart ssh
+
+# Some cloud images ship a default config that re-opens the standard port —
+# disable any leftover socket unit so only the port we set above is bound.
+- name: Disable ssh.socket if present (forces classic sshd listening on our port)
+  ansible.builtin.systemd:
+    name: ssh.socket
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Ensure sshd is enabled and running
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: true

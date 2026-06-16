@@ -1,0 +1,19 @@
+# Renomme en terraform.tfvars (gitignoré).
+#
+# Credentials OVH API : https://eu.api.ovh.com/createToken/
+# Public Cloud : crée un projet puis un utilisateur OpenStack dans Manager OVH.
+
+ovh_application_key    = "xxxxxxxxxxxxxxxx"
+ovh_application_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ovh_consumer_key       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+ovh_service_name       = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # UUID projet Public Cloud
+ovh_openstack_user_id  = "user-xxxxxxxx"
+ovh_openstack_password = "xxxxxxxxxxxxxxxxxxxxxxxxx"
+
+region   = "GRA11"
+hostname = "vps-prod"
+flavor   = "d2-2"
+image_name = "Debian 12"
+
+ssh_public_key = "ssh-ed25519 AAAA... your-key"

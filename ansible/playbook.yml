@@ -1,0 +1,49 @@
+---
+- name: Harden VPS for Docker workloads
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Assert OS is supported
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['os_family'] == 'Debian'
+        fail_msg: "Only Debian/Ubuntu are supported."
+
+    - name: Assert ssh_public_key is set
+      ansible.builtin.assert:
+        that:
+          - ssh_public_key is defined
+          - ssh_public_key | length > 50
+        fail_msg: "Set ssh_public_key in group_vars/all.yml before running."
+
+  tasks:
+    - import_tasks: tasks/base.yml
+      tags: [base]
+
+    - import_tasks: tasks/user.yml
+      tags: [user]
+
+    - import_tasks: tasks/ssh.yml
+      tags: [ssh]
+
+    - import_tasks: tasks/honeypot.yml
+      tags: [honeypot]
+      when: honeypot_enabled | bool
+
+    - import_tasks: tasks/docker.yml
+      tags: [docker]
+
+    - import_tasks: tasks/www.yml
+      tags: [www]
+
+    - import_tasks: tasks/auto_updates.yml
+      tags: [updates]
+
+    # Firewall en dernier : on ouvre tout ce qu'il faut avant de claquer la porte.
+    - import_tasks: tasks/firewall.yml
+      tags: [firewall]
+
+  handlers:
+    - import_tasks: handlers/main.yml

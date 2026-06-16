@@ -1,0 +1,32 @@
+---
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ system_timezone }}"
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - sudo
+      - vim
+      - htop
+      - ncdu
+      - net-tools
+      - rsyslog
+      - chrony
+      - python3
+      - python3-apt
+    state: present
+
+- name: Ensure chrony (NTP) is running
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true

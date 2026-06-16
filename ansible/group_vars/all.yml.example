@@ -1,0 +1,32 @@
+---
+# === User ===
+deploy_user: deploy
+# Clé publique SSH autorisée à se connecter en tant que `deploy_user`
+ssh_public_key: "ssh-ed25519 AAAA... your-key-here"
+
+# === SSH ===
+ssh_port: 4242
+
+# === Firewall ===
+# Ports IN supplémentaires si besoin (ex: [80, 443] si tu mets Traefik directement,
+# mais l'idée ici est que Docker bind sur 80/443 via le moteur Docker — voir notes
+# dans tasks/firewall.yml).
+extra_in_tcp_ports: []
+extra_in_udp_ports: []
+
+# === Honeypot ===
+honeypot_enabled: true
+honeypot_port: 22
+
+# === Docker ===
+# Branche stable du repo Docker. Laisse stable sauf cas particulier.
+docker_channel: stable
+
+# === Auto-updates ===
+unattended_auto_reboot: true
+unattended_auto_reboot_time: "03:30"
+docker_update_cron_hour: 4
+docker_update_cron_minute: 0
+
+# === Timezone ===
+system_timezone: Europe/Paris

@@ -1,0 +1,84 @@
+---
+# --- APT unattended-upgrades : sécurité quotidienne, reboot automatique si besoin ---
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name:
+      - unattended-upgrades
+      - apt-listchanges
+    state: present
+
+- name: Configure unattended-upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible
+      Unattended-Upgrade::Origins-Pattern {
+          "origin=Debian,codename=${distro_codename},label=Debian";
+          "origin=Debian,codename=${distro_codename},label=Debian-Security";
+          "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+          "origin=Ubuntu,codename=${distro_codename},label=Ubuntu";
+          "origin=Ubuntu,codename=${distro_codename}-security,label=Ubuntu";
+          "origin=UbuntuESMApps,codename=${distro_codename}-apps-security";
+          "origin=UbuntuESM,codename=${distro_codename}-infra-security";
+      };
+      Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+      Unattended-Upgrade::MinimalSteps "true";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+      Unattended-Upgrade::Automatic-Reboot "{{ 'true' if unattended_auto_reboot else 'false' }}";
+      Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_auto_reboot_time }}";
+      Unattended-Upgrade::SyslogEnable "true";
+
+- name: Enable daily apt timers
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Download-Upgradeable-Packages "1";
+      APT::Periodic::AutocleanInterval "7";
+      APT::Periodic::Unattended-Upgrade "1";
+
+- name: Ensure unattended-upgrades timer is enabled
+  ansible.builtin.systemd:
+    name: apt-daily-upgrade.timer
+    enabled: true
+    state: started
+
+# --- Docker engine + images : cron quotidien ---
+- name: Deploy docker-daily-update script
+  ansible.builtin.copy:
+    src: docker-daily-update.sh
+    dest: /usr/local/sbin/docker-daily-update
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Schedule docker-daily-update cron
+  ansible.builtin.cron:
+    name: docker-daily-update
+    user: root
+    hour: "{{ docker_update_cron_hour }}"
+    minute: "{{ docker_update_cron_minute }}"
+    job: /usr/local/sbin/docker-daily-update
+
+- name: Rotate docker-daily-update log
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/docker-daily-update
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      /var/log/docker-daily-update.log {
+          weekly
+          rotate 8
+          compress
+          missingok
+          notifempty
+          create 0640 root adm
+      }

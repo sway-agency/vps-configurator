@@ -1,0 +1,16 @@
+---
+- name: restart ssh
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+
+- name: restart endlessh
+  ansible.builtin.service:
+    name: endlessh
+    state: restarted
+
+- name: reload iptables
+  ansible.builtin.shell: |
+    iptables-restore < /etc/iptables/rules.v4
+    ip6tables-restore < /etc/iptables/rules.v6
+  changed_when: true

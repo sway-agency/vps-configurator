@@ -1,0 +1,30 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Ansible
+*.retry
+inventory.yml
+inventory.ini
+group_vars/all.yml
+!group_vars/all.yml.example
+ansible/.vault_pass
+*.vault
+
+# SSH / secrets
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db

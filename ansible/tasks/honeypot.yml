@@ -1,0 +1,49 @@
+---
+- name: Install endlessh (SSH tarpit honeypot)
+  ansible.builtin.apt:
+    name: endlessh
+    state: present
+
+- name: Configure endlessh listen port
+  ansible.builtin.copy:
+    dest: /etc/endlessh/config
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible
+      Port {{ honeypot_port }}
+      Delay 10000
+      MaxLineLength 32
+      MaxClients 4096
+  notify: restart endlessh
+
+- name: Ensure endlessh systemd override directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/endlessh.service.d
+    state: directory
+    mode: "0755"
+
+# Default unit binds to a non-privileged port. Allow it to bind low ports.
+- name: Override endlessh systemd unit to allow low-port bind
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/endlessh.service.d/override.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Service]
+      AmbientCapabilities=CAP_NET_BIND_SERVICE
+      PrivateUsers=false
+  register: endlessh_override
+
+- name: Reload systemd if override changed
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: endlessh_override.changed
+
+- name: Enable and start endlessh
+  ansible.builtin.service:
+    name: endlessh
+    state: started
+    enabled: true
