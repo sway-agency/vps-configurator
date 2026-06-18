@@ -1,11 +1,20 @@
 ---
 # --- APT unattended-upgrades : sécurité quotidienne, reboot automatique si besoin ---
-- name: Install unattended-upgrades
+# `cron` est dans base.yml mais on le ré-installe ici pour que `--tags updates`
+# marche standalone (le module cron a besoin du binaire crontab).
+- name: Install unattended-upgrades + cron
   ansible.builtin.apt:
     name:
       - unattended-upgrades
       - apt-listchanges
+      - cron
     state: present
+
+- name: Ensure cron service is running
+  ansible.builtin.service:
+    name: cron
+    state: started
+    enabled: true
 
 - name: Configure unattended-upgrades
   ansible.builtin.copy:

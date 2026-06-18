@@ -1,0 +1,94 @@
+---
+# Security scans : debsecan (CVE des paquets), rkhunter (rootkit), lynis (audit système).
+# Master toggle dans le playbook (security_scans_enabled).
+# Les flags par outil contrôlent uniquement le cron : si tu désactives un outil
+# le binaire reste installé (pas de désinstall automatique) mais le cron est retiré.
+
+- name: Install security scan tools (+ cron pour les tâches planifiées)
+  ansible.builtin.apt:
+    name:
+      - debsecan
+      - rkhunter
+      - lynis
+      - cron
+    state: present
+
+- name: Ensure cron service is running
+  ansible.builtin.service:
+    name: cron
+    state: started
+    enabled: true
+
+# --- rkhunter : neutralise le cron du paquet (on gère via notre propre cron) ---
+- name: Configure /etc/default/rkhunter
+  ansible.builtin.copy:
+    dest: /etc/default/rkhunter
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible — vps-configurator
+      # On gère check/update via cron Ansible, pas via le cron.daily du paquet.
+      CRON_DAILY_RUN="false"
+      CRON_DB_UPDATE="false"
+      DB_UPDATE_EMAIL="false"
+      REPORT_EMAIL=""
+      APT_AUTOGEN="true"
+
+# Baseline une fois après install : sinon le 1er --check signalera tous les
+# binaires système comme "changés". `creates:` rend l'opération idempotente.
+- name: Initialize rkhunter properties database (one-shot baseline)
+  ansible.builtin.command: rkhunter --propupd --quiet
+  args:
+    creates: /var/lib/rkhunter/db/rkhunter.dat
+  when: rkhunter_enabled | bool
+
+# --- Crons ---
+- name: Schedule debsecan weekly cron
+  ansible.builtin.cron:
+    name: debsecan-weekly
+    user: root
+    weekday: "{{ debsecan_cron_weekday }}"
+    hour: "{{ debsecan_cron_hour }}"
+    minute: "{{ debsecan_cron_minute }}"
+    job: "/usr/bin/debsecan --format report >> /var/log/debsecan.log 2>&1"
+    state: "{{ 'present' if debsecan_enabled else 'absent' }}"
+
+- name: Schedule rkhunter daily cron
+  ansible.builtin.cron:
+    name: rkhunter-daily
+    user: root
+    hour: "{{ rkhunter_cron_hour }}"
+    minute: "{{ rkhunter_cron_minute }}"
+    job: "/usr/bin/rkhunter --update --quiet && /usr/bin/rkhunter --check --cronjob --report-warnings-only >> /var/log/rkhunter.log 2>&1"
+    state: "{{ 'present' if rkhunter_enabled else 'absent' }}"
+
+- name: Schedule lynis weekly cron
+  ansible.builtin.cron:
+    name: lynis-weekly
+    user: root
+    weekday: "{{ lynis_cron_weekday }}"
+    hour: "{{ lynis_cron_hour }}"
+    minute: "{{ lynis_cron_minute }}"
+    job: "/usr/sbin/lynis audit system --cronjob --quiet >> /var/log/lynis_audit.log 2>&1"
+    state: "{{ 'present' if lynis_enabled else 'absent' }}"
+
+# --- Rotation des logs produits par les crons ---
+- name: Rotate security scan logs
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/security-scans
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      /var/log/debsecan.log
+      /var/log/rkhunter.log
+      /var/log/lynis_audit.log
+      {
+          weekly
+          rotate 8
+          compress
+          missingok
+          notifempty
+          create 0640 root adm
+      }

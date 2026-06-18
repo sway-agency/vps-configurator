@@ -57,6 +57,14 @@
     - import_tasks: tasks/auto_updates.yml
       tags: [updates]
 
+    - import_tasks: tasks/security_scans.yml
+      tags: [security_scans]
+      when: security_scans_enabled | bool
+
+    - import_tasks: tasks/zsh.yml
+      tags: [zsh]
+      when: install_zsh | default(true) | bool
+
     # Firewall en dernier : on ouvre tout ce qu'il faut avant de claquer la porte.
     - import_tasks: tasks/firewall.yml
       tags: [firewall]

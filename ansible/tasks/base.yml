@@ -21,6 +21,8 @@
       - net-tools
       - rsyslog
       - chrony
+      - cron
+      - logrotate
       - python3
       - python3-apt
     state: present
@@ -28,5 +30,11 @@
 - name: Ensure chrony (NTP) is running
   ansible.builtin.service:
     name: chrony
+    state: started
+    enabled: true
+
+- name: Ensure cron is running
+  ansible.builtin.service:
+    name: cron
     state: started
     enabled: true

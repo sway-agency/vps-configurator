@@ -62,6 +62,16 @@
 - name: Flush handlers (apply iptables now)
   ansible.builtin.meta: flush_handlers
 
+# iptables-restore a flushé la chain FORWARD : Docker doit redémarrer pour
+# ré-installer ses jumps (-A FORWARD -j DOCKER-USER, -j DOCKER-FORWARD, ...).
+# Sans ça, tout trafic vers conteneurs est laissé en pâture à notre seul
+# FORWARD ACCEPT (donc passe — mais sans les hardening Docker-USER).
+- name: Restart Docker to re-install FORWARD chain hooks
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+  failed_when: false
+
 # === Post-apply sanity check ===
 
 - name: Verify SSH is still reachable from local on {{ ssh_port }}

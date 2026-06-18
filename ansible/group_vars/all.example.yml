@@ -38,8 +38,31 @@ unattended_auto_reboot_time: "03:30"
 docker_update_cron_hour: 4
 docker_update_cron_minute: 0
 
+# === Security scans ===
+# Master toggle : false skip l'install et les crons des 3 outils.
+security_scans_enabled: true
+# Toggles par outil : false retire le cron (binaire conservé).
+debsecan_enabled: true
+rkhunter_enabled: true
+lynis_enabled: true
+# Horaires (TZ = system_timezone). weekday : 0 = dimanche, 1 = lundi, ...
+debsecan_cron_weekday: 0
+debsecan_cron_hour: 4
+debsecan_cron_minute: 0
+rkhunter_cron_hour: 5
+rkhunter_cron_minute: 0
+lynis_cron_weekday: 1
+lynis_cron_hour: 5
+lynis_cron_minute: 0
+
 # === Timezone ===
 system_timezone: Europe/Paris
+
+# === Dev shell env (root + deploy) ===
+# Installe Go {{go_version}} dans /usr/local/go, zsh + oh-my-zsh + NVM,
+# et écrit /root/.zshrc et /home/{{deploy_user}}/.zshrc avec theme robbyrussell.
+install_zsh: true
+go_version: "1.26.0"
 
 # === App env file ===
 # Path du fichier .env injecté par la task app_env. Ton docker-compose dans /var/www

@@ -1,7 +1,13 @@
 *filter
 :INPUT DROP [0:0]
-:FORWARD DROP [0:0]
+# FORWARD: laissé à ACCEPT car Docker gère entièrement cette chain (DOCKER-USER,
+# DOCKER-FORWARD, DOCKER-BRIDGE, DOCKER). Nos règles de filtrage du trafic
+# entrant vers conteneurs sont dans la chain DOCKER-USER ci-dessous.
+:FORWARD ACCEPT [0:0]
 :OUTPUT DROP [0:0]
+# DOCKER-USER: chain officielle Docker pour les règles user dans FORWARD.
+# Déclarée ici pour qu'elle existe au boot avant que Docker démarre.
+:DOCKER-USER - [0:0]
 
 # ===== INPUT =====
 -A INPUT -i lo -j ACCEPT
@@ -65,9 +71,31 @@
 # ICMP sortant
 -A OUTPUT -p icmp -j ACCEPT
 
-# ===== FORWARD =====
-# Docker installe ses propres règles dans la chain DOCKER-USER (insérée avant FORWARD).
-# On laisse Docker faire sa cuisine, mais on met une porte par défaut restrictive.
--A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# ===== DOCKER-USER =====
+# Tout paquet de l'extérieur vers un conteneur (port publié via `-p`) traverse
+# cette chain en PREMIER dans FORWARD. Bypass complet d'INPUT — donc c'est
+# ICI que se fait le hardening du trafic vers les conteneurs Docker.
+#
+# Stratégie : RETURN (= laisse passer à la suite de FORWARD = trafic accepté)
+# pour ce qui est légitime, DROP pour le reste.
+-A DOCKER-USER -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+-A DOCKER-USER -m conntrack --ctstate INVALID -j DROP
+# Trafic inter-conteneurs et bridges Docker (docker0 + br-* pour networks custom)
+-A DOCKER-USER -i docker0 -j RETURN
+-A DOCKER-USER -i br-+ -j RETURN
+# Depuis Internet : seul HTTP/HTTPS autorisé à atteindre les conteneurs (Traefik)
+{% if open_http_https | default(true) %}
+-A DOCKER-USER -p tcp --dport 80  -m conntrack --ctstate NEW -j RETURN
+-A DOCKER-USER -p tcp --dport 443 -m conntrack --ctstate NEW -j RETURN
+{% endif %}
+{% for p in extra_in_tcp_ports | default([]) %}
+-A DOCKER-USER -p tcp --dport {{ p }} -m conntrack --ctstate NEW -j RETURN
+{% endfor %}
+{% for p in extra_in_udp_ports | default([]) %}
+-A DOCKER-USER -p udp --dport {{ p }} -m conntrack --ctstate NEW -j RETURN
+{% endfor %}
+# Tout le reste (ports type 8000/8001/8080 publiés par erreur en 0.0.0.0): DROP
+-A DOCKER-USER -m limit --limit 3/min -j LOG --log-prefix "iptables-docker-drop: " --log-level 6
+-A DOCKER-USER -j DROP
 
 COMMIT

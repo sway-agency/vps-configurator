@@ -17,12 +17,29 @@
     mode: "0440"
     validate: /usr/sbin/visudo -cf %s
 
+# Anti-lockout : on récupère les clés autorisées de root et on les copie
+# vers le deploy user, pour qu'une connexion root@22 actuelle ne soit pas
+# perdue après bascule sur deploy@ssh_port.
+- name: Slurp root authorized_keys (fallback access)
+  ansible.builtin.slurp:
+    src: /root/.ssh/authorized_keys
+  register: root_authorized_keys
+  failed_when: false
+
+- name: Install root authorized_keys into deploy user (anti-lockout)
+  ansible.posix.authorized_key:
+    user: "{{ deploy_user }}"
+    key: "{{ root_authorized_keys.content | b64decode }}"
+    state: present
+  when:
+    - root_authorized_keys.content is defined
+    - (root_authorized_keys.content | b64decode | trim) | length > 0
+
 - name: Install authorized SSH key for deploy user
   ansible.posix.authorized_key:
     user: "{{ deploy_user }}"
     key: "{{ ssh_public_key }}"
     state: present
-    exclusive: true
 
 - name: Lock password for deploy user (key-only)
   ansible.builtin.user:

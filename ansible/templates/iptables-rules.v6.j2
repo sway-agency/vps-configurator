@@ -1,6 +1,8 @@
 *filter
 :INPUT DROP [0:0]
-:FORWARD DROP [0:0]
+# FORWARD: ACCEPT — Docker gère ses chains lui-même (cf. règles v4).
+# Docker n'utilise pas IPv6 par défaut, donc pas de DOCKER-USER ici.
+:FORWARD ACCEPT [0:0]
 :OUTPUT DROP [0:0]
 
 # ===== INPUT =====
