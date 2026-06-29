@@ -60,8 +60,13 @@
     state: restarted
   when: docker_daemon_cfg.changed
 
-- name: Enable and start Docker
-  ansible.builtin.service:
-    name: docker
+- name: Enable and start Docker daemon, socket and containerd at boot
+  ansible.builtin.systemd:
+    name: "{{ item }}"
     state: started
     enabled: true
+    daemon_reload: true
+  loop:
+    - containerd.service
+    - docker.socket
+    - docker.service
