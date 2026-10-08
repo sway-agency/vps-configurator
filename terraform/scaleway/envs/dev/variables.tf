@@ -2,7 +2,7 @@
 
 variable "env_name" {
   type    = string
-  default = "dev"   # renomme librement : "staging", "preprod", etc. (variable, donc override via tfvars)
+  default = "dev" # renomme librement : "staging", "preprod", etc. (variable, donc override via tfvars)
 }
 
 variable "project_slug" {

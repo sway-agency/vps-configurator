@@ -40,7 +40,7 @@ locals {
   # === Endpoint DB exposé à l'app ===
   # Managed : IP du load-balancer Scaleway. VPS : hostname du service docker.
   # one() retourne null si count=0, l'IP sinon — pas d'eager-eval du [0].
-  db_host = local.create_managed_db ? one(scaleway_rdb_instance.db[*].load_balancer[0].ip) : (var.db_engine == "postgresql" ? "postgres" : "mariadb")
+  db_host           = local.create_managed_db ? one(scaleway_rdb_instance.db[*].load_balancer[0].ip) : (var.db_engine == "postgresql" ? "postgres" : "mariadb")
   db_port_effective = local.db_port
 
   # === R2 endpoint ===
@@ -54,8 +54,8 @@ locals {
 
   app_env = merge(
     {
-      ENV_NAME    = var.env_name
-      DOMAIN      = local.domain_full
+      ENV_NAME = var.env_name
+      DOMAIN   = local.domain_full
 
       DATABASE_URL = local.database_url
       DB_HOST      = local.db_host
@@ -107,16 +107,16 @@ resource "scaleway_instance_server" "vps" {
 
 # ============ DB Managée (si db_provider=scaleway) ============
 resource "scaleway_rdb_instance" "db" {
-  count          = local.create_managed_db ? 1 : 0
-  name           = "${local.name_prefix}-db"
-  node_type      = var.db_node_type
-  engine         = local.rdb_engine
-  is_ha_cluster  = false
-  disable_backup = false
-  region         = var.scaleway_region
-  user_name      = var.db_user
-  password       = random_password.db.result
-  volume_type    = "bssd"
+  count             = local.create_managed_db ? 1 : 0
+  name              = "${local.name_prefix}-db"
+  node_type         = var.db_node_type
+  engine            = local.rdb_engine
+  is_ha_cluster     = false
+  disable_backup    = false
+  region            = var.scaleway_region
+  user_name         = var.db_user
+  password          = random_password.db.result
+  volume_type       = "bssd"
   volume_size_in_gb = var.db_volume_size_gb
 
   tags = ["env:${var.env_name}", "project:${var.project_slug}"]
@@ -144,7 +144,7 @@ resource "cloudflare_record" "apex_or_sub" {
   name    = var.subdomain == "" ? "@" : var.subdomain
   type    = "A"
   content = scaleway_instance_server.vps.public_ip
-  ttl     = 1       # auto
+  ttl     = 1 # auto
   proxied = true
   comment = "vps-configurator: ${var.env_name}"
 }
@@ -188,7 +188,7 @@ resource "cloudflare_r2_bucket" "assets" {
 resource "local_sensitive_file" "ansible_inventory" {
   filename        = "${var.ansible_dir}/inventories/${var.env_name}.yml"
   file_permission = "0600"
-  content         = yamlencode({
+  content = yamlencode({
     "${var.env_name}" = {
       hosts = {
         vps = {

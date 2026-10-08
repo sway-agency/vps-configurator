@@ -1,0 +1,4 @@
+---
+profile: min
+exclude_paths:
+  - inventories/

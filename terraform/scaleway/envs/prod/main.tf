@@ -44,13 +44,13 @@ module "env" {
   ssh_public_key          = var.ssh_public_key
 
   # DB
-  db_provider        = var.db_provider
-  db_engine          = var.db_engine
-  db_engine_version  = var.db_engine_version
-  db_node_type       = var.db_node_type
-  db_volume_size_gb  = var.db_volume_size_gb
-  db_name            = var.db_name
-  db_user            = var.db_user
+  db_provider       = var.db_provider
+  db_engine         = var.db_engine
+  db_engine_version = var.db_engine_version
+  db_node_type      = var.db_node_type
+  db_volume_size_gb = var.db_volume_size_gb
+  db_name           = var.db_name
+  db_user           = var.db_user
 
   # Cloudflare
   cloudflare_account_id = var.cloudflare_account_id

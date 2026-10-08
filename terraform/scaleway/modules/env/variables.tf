@@ -124,9 +124,9 @@ variable "subdomain" {
 
 variable "extra_dns_records" {
   type = list(object({
-    name = string
-    type = string
-    value = string
+    name    = string
+    type    = string
+    value   = string
     proxied = optional(bool, true)
   }))
   default     = []
