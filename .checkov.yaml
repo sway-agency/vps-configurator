@@ -1,0 +1,12 @@
+directory:
+  - terraform
+  - .github/workflows
+framework:
+  - terraform
+  - github_actions
+skip-check:
+  - CKV_OPENSTACK_1
+skip-path:
+  - \.terraform
+compact: true
+quiet: true
