@@ -2,17 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(python3 scripts/norminette.py)",
-      "Bash(ansible-lint:*)",
-      "Bash(ansible-galaxy collection install -r requirements.yml)",
-      "Bash(ansible-playbook --syntax-check:*)",
-      "Bash(terraform fmt:*)",
-      "Bash(terraform validate:*)",
-      "Bash(tflint:*)",
-      "Bash(checkov:*)",
-      "Bash(shellcheck:*)",
-      "Bash(actionlint:*)",
-      "Bash(zizmor:*)",
-      "Bash(gitleaks:*)"
+      "Bash(terraform fmt -check -recursive terraform)",
+      "Bash(git ls-files -z '*.sh' | xargs -0 shellcheck)",
+      "Bash(actionlint)",
+      "Bash(gitleaks git --redact .)"
     ],
     "deny": [
       "Bash(terraform apply:*)",
