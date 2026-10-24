@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/norminette.py)",
+      "Bash(ansible-lint:*)",
+      "Bash(ansible-galaxy collection install -r requirements.yml)",
+      "Bash(ansible-playbook --syntax-check:*)",
+      "Bash(terraform fmt:*)",
+      "Bash(terraform validate:*)",
+      "Bash(tflint:*)",
+      "Bash(checkov:*)",
+      "Bash(shellcheck:*)",
+      "Bash(actionlint:*)",
+      "Bash(zizmor:*)",
+      "Bash(gitleaks:*)"
+    ],
+    "deny": [
+      "Bash(terraform apply:*)",
+      "Bash(terraform destroy:*)"
+    ]
+  }
+}
