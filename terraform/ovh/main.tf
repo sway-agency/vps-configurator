@@ -7,7 +7,7 @@ terraform {
     }
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.54"
+      version = "~> 3.4"
     }
   }
 }
