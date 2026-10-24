@@ -14,7 +14,10 @@
 
 - name: Add Docker apt repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_channel }}"
+    repo: >-
+      deb [arch={{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      {{ ansible_distribution_release }} {{ docker_channel }}
     filename: docker
     state: present
     update_cache: true
@@ -54,16 +57,10 @@
       }
   register: docker_daemon_cfg
 
-- name: Restart Docker if daemon config changed
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-  when: docker_daemon_cfg.changed
-
 - name: Enable and start Docker daemon, socket and containerd at boot
   ansible.builtin.systemd:
     name: "{{ item }}"
-    state: started
+    state: "{{ 'restarted' if item == 'docker.service' and docker_daemon_cfg.changed else 'started' }}"
     enabled: true
     daemon_reload: true
   loop:

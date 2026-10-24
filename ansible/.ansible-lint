@@ -1,4 +1,4 @@
 ---
-profile: min
+profile: production
 exclude_paths:
   - inventories/

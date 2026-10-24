@@ -39,7 +39,7 @@
     group: root
     mode: "0640"
     validate: "iptables-restore --test %s"
-  notify: reload iptables
+  notify: Reload iptables
 
 - name: Render IPv6 rules
   ansible.builtin.template:
@@ -49,7 +49,7 @@
     group: root
     mode: "0640"
     validate: "ip6tables-restore --test %s"
-  notify: reload iptables
+  notify: Reload iptables
 
 - name: Ensure netfilter-persistent is enabled
   ansible.builtin.service:

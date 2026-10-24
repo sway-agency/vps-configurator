@@ -44,7 +44,7 @@
 - name: Install / upgrade Go {{ go_version }}
   when: ('go' + go_version + ' ') not in (go_installed.stdout | default(''))
   block:
-    - name: Download Go {{ go_version }} tarball
+    - name: Download Go tarball {{ go_version }}
       ansible.builtin.get_url:
         url: "https://go.dev/dl/go{{ go_version }}.linux-{{ go_arch }}.tar.gz"
         dest: "/tmp/go{{ go_version }}.linux-{{ go_arch }}.tar.gz"
@@ -77,6 +77,7 @@
     executable: /bin/bash
   environment:
     HOME: "{{ item.home }}"
+  become: true
   become_user: "{{ item.name }}"
   loop: "{{ shell_users }}"
   loop_control:
@@ -93,6 +94,7 @@
     executable: /bin/bash
   environment:
     HOME: "{{ item.home }}"
+  become: true
   become_user: "{{ item.name }}"
   loop: "{{ shell_users }}"
   loop_control:

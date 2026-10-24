@@ -70,7 +70,7 @@
   delegate_to: localhost
   become: false
 
-- name: Smoke-test deploy@{{ ssh_port }} from local
+- name: Smoke-test the deploy user SSH login from local on port {{ ssh_port }}
   ansible.builtin.command: >-
     ssh -p {{ ssh_port }}
         -o StrictHostKeyChecking=accept-new
@@ -89,7 +89,7 @@
 
 # === Bascule de la connexion pour la suite du play ===
 
-- name: Switch Ansible connection to {{ deploy_user }}@{{ ssh_port }}
+- name: Switch Ansible connection to the deploy user on port {{ ssh_port }}
   ansible.builtin.set_fact:
     ansible_user: "{{ deploy_user }}"
     ansible_port: "{{ ssh_port }}"

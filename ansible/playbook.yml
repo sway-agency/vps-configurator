@@ -32,42 +32,54 @@
         fail_msg: "deploy_user invalide. Doit matcher [a-z_][a-z0-9_-]{0,30}."
 
   tasks:
-    - import_tasks: tasks/base.yml
+    - name: Apply base
+      ansible.builtin.import_tasks: tasks/base.yml
       tags: [base]
 
-    - import_tasks: tasks/user.yml
+    - name: Apply user
+      ansible.builtin.import_tasks: tasks/user.yml
       tags: [user]
 
-    - import_tasks: tasks/ssh.yml
+    - name: Apply ssh
+      ansible.builtin.import_tasks: tasks/ssh.yml
       tags: [ssh]
 
-    - import_tasks: tasks/honeypot.yml
+    - name: Apply honeypot
+      ansible.builtin.import_tasks: tasks/honeypot.yml
       tags: [honeypot]
       when: honeypot_enabled | bool
 
-    - import_tasks: tasks/docker.yml
+    - name: Apply docker
+      ansible.builtin.import_tasks: tasks/docker.yml
       tags: [docker]
 
-    - import_tasks: tasks/www.yml
+    - name: Apply www
+      ansible.builtin.import_tasks: tasks/www.yml
       tags: [www]
 
-    - import_tasks: tasks/app_env.yml
+    - name: Apply app_env
+      ansible.builtin.import_tasks: tasks/app_env.yml
       tags: [app_env]
 
-    - import_tasks: tasks/auto_updates.yml
+    - name: Apply auto_updates
+      ansible.builtin.import_tasks: tasks/auto_updates.yml
       tags: [updates]
 
-    - import_tasks: tasks/security_scans.yml
+    - name: Apply security_scans
+      ansible.builtin.import_tasks: tasks/security_scans.yml
       tags: [security_scans]
       when: security_scans_enabled | bool
 
-    - import_tasks: tasks/zsh.yml
+    - name: Apply zsh
+      ansible.builtin.import_tasks: tasks/zsh.yml
       tags: [zsh]
       when: install_zsh | default(true) | bool
 
     # Firewall en dernier : on ouvre tout ce qu'il faut avant de claquer la porte.
-    - import_tasks: tasks/firewall.yml
+    - name: Apply firewall
+      ansible.builtin.import_tasks: tasks/firewall.yml
       tags: [firewall]
 
   handlers:
-    - import_tasks: handlers/main.yml
+    - name: Import handlers
+      ansible.builtin.import_tasks: handlers/main.yml

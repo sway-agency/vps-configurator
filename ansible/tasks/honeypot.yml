@@ -16,7 +16,7 @@
       Delay 10000
       MaxLineLength 32
       MaxClients 4096
-  notify: restart endlessh
+  notify: Restart endlessh
 
 - name: Ensure endlessh systemd override directory exists
   ansible.builtin.file:
@@ -37,13 +37,9 @@
       PrivateUsers=false
   register: endlessh_override
 
-- name: Reload systemd if override changed
-  ansible.builtin.systemd:
-    daemon_reload: true
-  when: endlessh_override.changed
-
 - name: Enable and start endlessh
-  ansible.builtin.service:
+  ansible.builtin.systemd:
     name: endlessh
     state: started
     enabled: true
+    daemon_reload: "{{ endlessh_override.changed }}"
