@@ -36,7 +36,6 @@ module "env" {
   project_slug = var.project_slug
 
   # Scaleway
-  scaleway_project_id     = var.scaleway_project_id
   scaleway_region         = var.scaleway_region
   scaleway_zone           = var.scaleway_zone
   vps_type                = var.vps_type

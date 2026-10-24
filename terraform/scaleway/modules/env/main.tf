@@ -87,13 +87,22 @@ resource "scaleway_iam_ssh_key" "bootstrap" {
   public_key = var.ssh_public_key
 }
 
+resource "scaleway_instance_ip" "vps_v4" {
+  type = "routed_ipv4"
+  zone = var.scaleway_zone
+}
+
+resource "scaleway_instance_ip" "vps_v6" {
+  type = "routed_ipv6"
+  zone = var.scaleway_zone
+}
+
 resource "scaleway_instance_server" "vps" {
-  name              = "${local.name_prefix}-vps"
-  type              = var.vps_type
-  image             = var.vps_image
-  enable_ipv6       = true
-  routed_ip_enabled = true
-  zone              = var.scaleway_zone
+  name   = "${local.name_prefix}-vps"
+  type   = var.vps_type
+  image  = var.vps_image
+  ip_ids = [scaleway_instance_ip.vps_v4.id, scaleway_instance_ip.vps_v6.id]
+  zone   = var.scaleway_zone
 
   root_volume {
     size_in_gb  = var.vps_root_volume_size_gb
@@ -133,7 +142,7 @@ resource "scaleway_rdb_acl" "db_acl" {
   count       = local.create_managed_db ? 1 : 0
   instance_id = scaleway_rdb_instance.db[0].id
   acl_rules {
-    ip          = "${scaleway_instance_server.vps.public_ip}/32"
+    ip          = "${scaleway_instance_ip.vps_v4.address}/32"
     description = "VPS ${local.name_prefix}"
   }
 }
@@ -143,7 +152,7 @@ resource "cloudflare_record" "apex_or_sub" {
   zone_id = var.cloudflare_zone_id
   name    = var.subdomain == "" ? "@" : var.subdomain
   type    = "A"
-  content = scaleway_instance_server.vps.public_ip
+  content = scaleway_instance_ip.vps_v4.address
   ttl     = 1 # auto
   proxied = true
   comment = "vps-configurator: ${var.env_name}"
@@ -153,7 +162,7 @@ resource "cloudflare_record" "wildcard" {
   zone_id = var.cloudflare_zone_id
   name    = var.subdomain == "" ? "*" : "*.${var.subdomain}"
   type    = "A"
-  content = scaleway_instance_server.vps.public_ip
+  content = scaleway_instance_ip.vps_v4.address
   ttl     = 1
   proxied = true
   comment = "vps-configurator: ${var.env_name} wildcard for Traefik"
@@ -189,10 +198,10 @@ resource "local_sensitive_file" "ansible_inventory" {
   filename        = "${var.ansible_dir}/inventories/${var.env_name}.yml"
   file_permission = "0600"
   content = yamlencode({
-    "${var.env_name}" = {
+    (var.env_name) = {
       hosts = {
         vps = {
-          ansible_host                 = scaleway_instance_server.vps.public_ip
+          ansible_host                 = scaleway_instance_ip.vps_v4.address
           ansible_user                 = "deploy"
           ansible_port                 = 4242
           ansible_ssh_private_key_file = "~/.ssh/id_ed25519"

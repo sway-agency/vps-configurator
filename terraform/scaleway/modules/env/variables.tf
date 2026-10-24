@@ -28,10 +28,6 @@ variable "scaleway_region" {
   default = "fr-par"
 }
 
-variable "scaleway_project_id" {
-  type = string
-}
-
 variable "vps_type" {
   type        = string
   default     = "DEV1-S"

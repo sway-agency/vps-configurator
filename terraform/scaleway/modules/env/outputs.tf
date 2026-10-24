@@ -1,9 +1,9 @@
 output "vps_public_ip" {
-  value = scaleway_instance_server.vps.public_ip
+  value = scaleway_instance_ip.vps_v4.address
 }
 
 output "vps_ipv6" {
-  value = scaleway_instance_server.vps.ipv6_address
+  value = scaleway_instance_ip.vps_v6.prefix
 }
 
 output "domain_full" {
